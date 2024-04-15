@@ -17,7 +17,7 @@ import (
 var (
 	logger      slog.Logger
 	lvl         = new(slog.LevelVar)
-	numVideo   int64
+	numVideo    int64
 	durationReg = regexp.MustCompile(`^P((?P<year>\d+)Y)?((?P<month>\d+)M)?((?P<week>\d+)W)?((?P<day>\d+)D)?(T((?P<hour>\d+)H)?((?P<minute>\d+)M)?((?P<second>\d+)S)?)?$`)
 )
 
@@ -141,7 +141,7 @@ func getVideoInfoFromHandle(ctx context.Context, handle string) (map[string]yout
 
 func info2CSV(infos map[string]youtube.Video) error {
 	w := csv.NewWriter(os.Stdout)
-	w.Write([]string{"ID", "Title", "PublishedAt", "Duration", "ViewCount", "LikeCount"})
+	w.Write([]string{"ID", "Title", "PublishedAt", "Duration", "ViewCount", "LikeCount", "CommentCount"})
 	var records = make([][]string, 0)
 	for _, item := range infos {
 		records = append(records, []string{
@@ -151,6 +151,7 @@ func info2CSV(infos map[string]youtube.Video) error {
 			item.ContentDetails.Duration,
 			fmt.Sprintf("%d", item.Statistics.ViewCount),
 			fmt.Sprintf("%d", item.Statistics.LikeCount),
+			fmt.Sprintf("%d", item.Statistics.CommentCount),
 		})
 
 	}
