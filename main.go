@@ -7,16 +7,18 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
+	"regexp"
+	"strconv"
 
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
 
 var (
-	logger    slog.Logger
-	lvl       = new(slog.LevelVar)
-	num_video int64
+	logger      slog.Logger
+	lvl         = new(slog.LevelVar)
+	numVideo   int64
+	durationReg = regexp.MustCompile(`^P((?P<year>\d+)Y)?((?P<month>\d+)M)?((?P<week>\d+)W)?((?P<day>\d+)D)?(T((?P<hour>\d+)H)?((?P<minute>\d+)M)?((?P<second>\d+)S)?)?$`)
 )
 
 func init() {
@@ -25,6 +27,43 @@ func init() {
 	logger = *slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: lvl,
 	}))
+}
+
+func itemValid(item youtube.Video) (bool, error) {
+	valid := false
+	// TODO handmade filter
+	match := durationReg.FindStringSubmatch(item.ContentDetails.Duration)
+	for i, name := range durationReg.SubexpNames() {
+		part := match[i]
+		if i == 0 || name == "" || part == "" {
+			continue
+		}
+		val, err := strconv.Atoi(part)
+		if err != nil {
+			return false, err
+		}
+		switch name {
+		case "year":
+			return true, nil
+		case "month":
+			return true, nil
+		case "week":
+			return true, nil
+		case "day":
+			return true, nil
+		case "hour":
+			return true, nil
+		case "minute":
+			if val > 4 {
+				return true, nil
+			}
+		case "second":
+			// pass
+		default:
+			return false, fmt.Errorf("unknown field %s", name)
+		}
+	}
+	return valid, nil
 }
 
 func getVideoInfoFromHandle(ctx context.Context, handle string) (map[string]youtube.Video, error) {
@@ -80,13 +119,13 @@ func getVideoInfoFromHandle(ctx context.Context, handle string) (map[string]yout
 			return nil, err
 		}
 		for _, item := range vresp.Items {
-			// TODO handmade filter
-			if !strings.Contains(item.ContentDetails.Duration, "H") {
+			valid, _ := itemValid(*item)
+			if !valid {
 				continue
 			}
 			infos[item.Id] = *item
 			logger.Info("Video", "info", infos[item.Id])
-			if len(infos) >= int(num_video) {
+			if len(infos) >= int(numVideo) {
 				presp.NextPageToken = ""
 				break
 			}
@@ -123,7 +162,7 @@ func info2CSV(infos map[string]youtube.Video) error {
 func main() {
 	// Create Youtube Service
 	ctx := context.Background()
-	flag.Int64Var(&num_video, "n", 10, "number of video to fetch")
+	flag.Int64Var(&numVideo, "n", 10, "number of video to fetch")
 	var verbose int
 	flag.IntVar(&verbose, "v", 0, "verbose")
 	flag.Parse()
