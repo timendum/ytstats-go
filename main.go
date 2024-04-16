@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -84,6 +85,10 @@ func getVideoInfoFromHandle(ctx context.Context, handle string) (map[string]yout
 		logger.Debug("Channels.List", slog.Any("item", item))
 		channelId = &item.ContentDetails.RelatedPlaylists.Uploads
 		break
+	}
+	if channelId == nil {
+		fmt.Printf("User %s not found", handle)
+		return nil, errors.New("user not found")
 	}
 	logger.Info("Found playlist", "id", *channelId)
 	infos := make(map[string]youtube.Video)
