@@ -27,7 +27,7 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: binary-${{ matrix.GOARCH }}-${{ matrix.GOOS }}
+        name: ytstats-${{ matrix.GOARCH }}-${{ matrix.GOOS }}
         path: |
           ytstats.exe
           ytstats
